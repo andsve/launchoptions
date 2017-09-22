@@ -1,0 +1,18 @@
+images {
+  image: "/launchoptions/assets/rounded_box.png"
+}
+images {
+  image: "/launchoptions/assets/unchecked.png"
+}
+images {
+  image: "/launchoptions/assets/checked.png"
+}
+images {
+  image: "/launchoptions/assets/dropdown.png"
+}
+images {
+  image: "/launchoptions/assets/groupbox.png"
+}
+margin: 0
+extrude_borders: 0
+inner_padding: 0

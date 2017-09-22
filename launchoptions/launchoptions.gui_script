@@ -1,0 +1,248 @@
+local launchoptions = require("launchoptions.launchoptions")
+
+local WIDGET_TYPE_BUTTON = hash("button")
+local WIDGET_TYPE_DROPDOWN = hash("dropdown")
+local WIDGET_TYPE_CHECKBOX = hash("checkbox")
+local WIDGET_TYPE_GROUP = hash("group")
+
+local create_widget = function(self, node_id, node_type)
+    if node_type == WIDGET_TYPE_BUTTON then
+        local node_bg = gui.get_node(node_id .. "/bg")
+        gui.set_color(node_bg, self.color_base)
+    elseif node_type == WIDGET_TYPE_DROPDOWN then
+        local node_bg = gui.get_node(node_id .. "/bg")
+        gui.set_color(node_bg, self.color_base)
+    elseif node_type == WIDGET_TYPE_CHECKBOX then
+        local node_bg = gui.get_node(node_id .. "/bg")
+        gui.set_color(node_bg, self.color_base)
+    elseif node_type == WIDGET_TYPE_GROUP then
+        local node_bg = gui.get_node(node_id .. "/bg")
+        local node_label = gui.get_node(node_id .. "/label")
+        gui.set_color(node_bg, self.color_base)
+        gui.set_outline(node_label, self.color_base)
+    end
+end
+
+function init(self)
+    self.bg_node = gui.get_node("bg")
+    self.hover_widget_id = nil
+    self.hover_widget_type = nil
+    self.active_widget_id = nil
+    self.active_widget_type = nil
+
+    -- pprint(self.options)
+    self.res = 1
+end
+
+function on_message(self, message_id, message, sender)
+    if message_id == hash("setup") then
+        self.input_trigger = message.input_trigger
+        self.fade_widgets = message.fade_widgets
+        self.width = message.width
+        self.height = message.height
+        self.color_base = message.color
+        self.color_hover = message.color*0.8
+        self.color_active = message.color*1.5
+        self.color_active.w = 1.0
+
+        -- Setup bg node
+        gui.set_size(self.bg_node, vmath.vector3(message.width, message.height, 0))
+        gui.set_color(self.bg_node, self.color_base)
+
+        --tmp
+        -- gui.set_color(gui.get_node("quit/bg"), self.color_base)
+        -- gui.set_color(gui.get_node("run/bg"), self.color_base)
+        -- gui.set_color(gui.get_node("checkbox/bg"), self.color_base)
+        -- gui.set_color(gui.get_node("dropdown/bg"), self.color_base)
+        -- gui.set_color(gui.get_node("group/bg"), self.color_base)
+        -- gui.set_outline(gui.get_node("group/label"), self.color_base)
+
+        create_widget(self, "quit", WIDGET_TYPE_BUTTON)
+        create_widget(self, "run", WIDGET_TYPE_BUTTON)
+        create_widget(self, "checkbox", WIDGET_TYPE_CHECKBOX)
+        create_widget(self, "dropdown", WIDGET_TYPE_DROPDOWN)
+        create_widget(self, "group", WIDGET_TYPE_GROUP)
+
+        -- gui.set_color(gui.get_node("checkbox/check"), self.color_base)
+
+        msg.post("#", "acquire_input_focus")
+    end
+end
+
+local anim_widget_color = function(self, node, color)
+    if self.fade_widgets then
+        gui.animate(node, "color", color, gui.EASING_LINEAR, 0.08)
+    else
+        gui.set_color(node, color)
+    end
+end
+
+local reset_active_widget = function(self)
+    if self.active_widget_type == WIDGET_TYPE_BUTTON or
+       self.active_widget_type == WIDGET_TYPE_DROPDOWN or
+       self.active_widget_type == WIDGET_TYPE_CHECKBOX then
+        local node_bg = gui.get_node(self.active_widget_id .. "/bg")
+        anim_widget_color(self, node_bg, self.color_base)
+    end
+
+    self.active_widget_id = nil
+    self.active_widget_type = nil
+end
+
+local reset_hover_widget = function(self)
+    if self.hover_widget_type == WIDGET_TYPE_BUTTON or
+       self.hover_widget_type == WIDGET_TYPE_DROPDOWN or
+       self.hover_widget_type == WIDGET_TYPE_CHECKBOX then
+        local node_bg = gui.get_node(self.hover_widget_id .. "/bg")
+        anim_widget_color(self, node_bg, self.color_base)
+    end
+
+    self.hover_widget_id = nil
+    self.hover_widget_type = nil
+end
+
+local button = function(self, node_id, action_id, action, func)
+    local node_bg    = gui.get_node(node_id .. "/bg")
+    local node_label = gui.get_node(node_id .. "/label")
+    local hit = gui.pick_node(node_bg, action.x, action.y)
+
+    if hit then
+        if action.pressed then
+            self.active_widget_id = node_id
+            self.active_widget_type = WIDGET_TYPE_BUTTON
+            anim_widget_color(self, node_bg, self.color_active)
+        elseif action.released then
+            if self.active_widget_id == node_id then
+                func(self)
+            end
+
+            reset_active_widget(self)
+        else
+            -- hover?
+            if self.hover_widget_id ~= node_id then
+                reset_hover_widget(self)
+                self.hover_widget_id = node_id
+                self.hover_widget_type = WIDGET_TYPE_BUTTON
+                anim_widget_color(self, node_bg, self.color_hover)
+            end
+        end
+    elseif self.hover_widget_id == node_id then
+        reset_hover_widget(self)
+    end
+end
+
+local dropdown = function(self, node_id, action_id, action, values, current)
+    local node_bg    = gui.get_node(node_id .. "/bg")
+    local node_label = gui.get_node(node_id .. "/label")
+    local hit = gui.pick_node(node_bg, action.x, action.y)
+
+    if hit then
+        if action.pressed then
+            self.active_widget_id = node_id
+            self.active_widget_type = WIDGET_TYPE_DROPDOWN
+            anim_widget_color(self, node_bg, self.color_active)
+        elseif action.released then
+            if self.active_widget_id == node_id then
+                mnu.begin()
+                for i,v in ipairs(values) do
+                    if i == current then
+                        mnu.label(i, true, tostring(v) .. " ✓")
+                    else
+                        mnu.label(i, true, tostring(v))
+                    end
+
+                end
+                mnu.finish()
+                local p = gui.get_position(node_bg)
+                local s = gui.get_size(node_bg)
+                local res = tonumber(mnu.show(p.x-s.x/2, self.height - p.y - s.y/2))
+                if res > 0 then
+                    current = res
+                end
+            end
+
+            reset_active_widget(self)
+        else
+            -- hover?
+            if self.hover_widget_id ~= node_id then
+                reset_hover_widget(self)
+                self.hover_widget_id = node_id
+                self.hover_widget_type = WIDGET_TYPE_DROPDOWN
+                anim_widget_color(self, node_bg, self.color_hover)
+            end
+        end
+    elseif self.hover_widget_id == node_id then
+        reset_hover_widget(self)
+    end
+
+    gui.set_text(node_label, values[current])
+
+    return current
+end
+
+local checkbox = function(self, node_id, action_id, action, value)
+    local node_bg    = gui.get_node(node_id .. "/bg")
+    local node_check = gui.get_node(node_id .. "/check")
+    local hit = gui.pick_node(node_bg, action.x, action.y)
+
+    if hit then
+        if action.pressed then
+            self.active_widget_id = node_id
+            self.active_widget_type = WIDGET_TYPE_CHECKBOX
+            anim_widget_color(self, node_bg, self.color_active)
+        elseif action.released then
+            if self.active_widget_id == node_id then
+                self.c = not self.c
+            end
+
+            reset_active_widget(self)
+        else
+            -- hover?
+            if self.hover_widget_id ~= node_id then
+                reset_hover_widget(self)
+                self.hover_widget_id = node_id
+                self.hover_widget_type = WIDGET_TYPE_CHECKBOX
+                anim_widget_color(self, node_bg, self.color_hover)
+            end
+        end
+    elseif self.hover_widget_id == node_id then
+        reset_hover_widget(self)
+    end
+
+    if self.c then
+        gui.play_flipbook(node_check, "checked")
+    else
+        gui.play_flipbook(node_check, "unchecked")
+    end
+
+    return self.c
+end
+
+function on_input(self, action_id, action)
+    if action_id == self.input_trigger or action_id == nil then
+
+        button(self, "quit", action_id, action, function()
+            msg.post("@system:", "exit", {code = 0})
+        end)
+
+        button(self, "run", action_id, action, function()
+            msg.post(".", "run")
+        end)
+
+        local values = {
+            "640x480",
+            "640x360",
+            "1280x960",
+            "1280x720",
+            "2560x1080",
+            "2560x1920",
+        }
+        self.res = dropdown(self, "dropdown", action_id, action, values, self.res)
+
+        self.c = checkbox(self, "checkbox", action_id, action, self.c)
+
+        if action.released and self.active_widget_id then
+            reset_active_widget(self)
+        end
+    end
+end

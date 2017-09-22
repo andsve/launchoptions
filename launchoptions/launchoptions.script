@@ -1,0 +1,88 @@
+local launchoptions = require("launchoptions.launchoptions")
+
+go.property("dialog_width", 500)
+go.property("dialog_height", 300)
+go.property("dialog_split", 50)
+go.property("dialog_color", vmath.vector4(1,1,1,1))
+go.property("resizeable_support", true)
+go.property("fullscreen_support", true)
+go.property("fade_widgets", true)
+go.property("game_collection", msg.url())
+go.property("input_trigger", hash("click"))
+
+local run_game = function(self)
+    msg.post("@system:", "reboot", { arg1 = "--config=launchoptions.run_game=1" })
+end
+
+local run_launchoptions = function(self)
+    local project_title = sys.get_config("project.title", "Untitled")
+    local arg1 = "--config=launchoptions.booted=1"
+    local arg2 = "--config=display.width=" .. tostring(self.dialog_width)
+    local arg3 = "--config=display.height=" .. tostring(self.dialog_height)
+    local arg4 = "--config=project.title=" .. tostring(project_title) .. " - Options"
+    msg.post("@system:", "reboot", { arg1 = arg1, arg2 = arg2, arg3 = arg3, arg4 = arg4 })
+end
+
+function init(self)
+    -- Get options specific for launchoptions
+    local conf_booted = sys.get_config("launchoptions.booted", 0)
+    local conf_run_game = sys.get_config("launchoptions.run_game", 0)
+
+    -- If appropriet game.project config is set, we should run the game instead
+    -- of displaying the launchoptions collection.
+    if conf_run_game == "1" then
+        -- TODO apply settings
+        launchoptions_utils.hide_window()
+        launchoptions_utils.set_window_size(300, 300)
+
+        -- Load "correct" game/entry collection
+        msg.post(self.game_collection, "load")
+
+    -- We need to reboot the engine on initial boot with the
+    -- expected dialog window size.
+    elseif conf_booted == "0" then
+        launchoptions_utils.hide_window()
+        run_launchoptions(self)
+    else
+        -- Setup default options
+        self.options = {}
+        self.options[1] = {
+            group = "General",
+            options = {
+                { type = "checkbox", id = "debug", label = "Debug" }
+            }
+        }
+
+        -- Try to load custom options.json
+        local options_res = sys.load_resource("/launchoptions.json")
+        if options_res then
+            self.options = json.decode(options_res)
+        end
+
+        launchoptions.options = self.options
+
+        launchoptions_utils.make_dialog()
+        msg.post("#gui", "setup", {
+            width = tonumber(self.dialog_width),
+            height = tonumber(self.dialog_height),
+            split = tonumber(self.dialog_split),
+            color = self.dialog_color,
+            input_trigger = self.input_trigger,
+            fade_widgets = self.fade_widgets
+        })
+    end
+end
+
+function update(self, dt)
+    -- Add update code here
+    -- Remove this function if not needed
+end
+
+function on_message(self, message_id, message, sender)
+    if message_id == hash("proxy_loaded") then
+        launchoptions_utils.show_window()
+        msg.post(sender, "enable")
+    elseif message_id == hash("run") then
+        run_game(self)
+    end
+end

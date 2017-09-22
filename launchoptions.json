@@ -1,0 +1,15 @@
+[
+    {
+        "group": "Custom General",
+        "options": [
+            { "type": "checkbox", "id": "lol", "label": "LOL" }
+        ]
+    },
+    {
+        "group": "Graphics",
+        "options": [
+            { "type": "resolutions", "id": "res", "label": "Resolution" }
+        ]
+    }
+
+]
