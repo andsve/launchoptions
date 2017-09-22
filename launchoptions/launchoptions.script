@@ -4,6 +4,7 @@ go.property("dialog_width", 500)
 go.property("dialog_height", 300)
 go.property("dialog_split", 50)
 go.property("dialog_color", vmath.vector4(1,1,1,1))
+go.property("dialog_text_color", vmath.vector4(1,1,1,1))
 go.property("resizeable_support", true)
 go.property("fullscreen_support", true)
 go.property("fade_widgets", true)
@@ -67,6 +68,7 @@ function init(self)
             height = tonumber(self.dialog_height),
             split = tonumber(self.dialog_split),
             color = self.dialog_color,
+            text_color = self.dialog_text_color,
             input_trigger = self.input_trigger,
             fade_widgets = self.fade_widgets
         })

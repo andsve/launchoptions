@@ -5,22 +5,170 @@ local WIDGET_TYPE_DROPDOWN = hash("dropdown")
 local WIDGET_TYPE_CHECKBOX = hash("checkbox")
 local WIDGET_TYPE_GROUP = hash("group")
 
-local create_widget = function(self, node_id, node_type)
+local reset_widget = function(self, node_id, node_type)
     if node_type == WIDGET_TYPE_BUTTON then
         local node_bg = gui.get_node(node_id .. "/bg")
         gui.set_color(node_bg, self.color_base)
+        local node_label = gui.get_node(node_id .. "/label")
+        gui.set_color(node_label, self.color_text)
     elseif node_type == WIDGET_TYPE_DROPDOWN then
         local node_bg = gui.get_node(node_id .. "/bg")
         gui.set_color(node_bg, self.color_base)
+        local node_label = gui.get_node(node_id .. "/label")
+        gui.set_color(node_label, self.color_text)
+        local node_drop = gui.get_node(node_id .. "/drop")
+        gui.set_color(node_drop, self.color_text)
     elseif node_type == WIDGET_TYPE_CHECKBOX then
         local node_bg = gui.get_node(node_id .. "/bg")
         gui.set_color(node_bg, self.color_base)
+        local node_check = gui.get_node(node_id .. "/check")
+        gui.set_color(node_check, self.color_text)
     elseif node_type == WIDGET_TYPE_GROUP then
         local node_bg = gui.get_node(node_id .. "/bg")
         local node_label = gui.get_node(node_id .. "/label")
         gui.set_color(node_bg, self.color_base)
         gui.set_outline(node_label, self.color_base)
+        gui.set_color(node_label, self.color_text)
     end
+end
+
+local hide_templates = function(self)
+    -- hide group template
+    gui.set_enabled(gui.get_node(self.templates.group .. "/bg"), false)
+    gui.set_enabled(gui.get_node(self.templates.label), false)
+    gui.set_enabled(gui.get_node(self.templates.dropdown .. "/bg"), false)
+    gui.set_enabled(gui.get_node(self.templates.checkbox .. "/bg"), false)
+end
+
+local create_group = function(self, pos_y, height, group_id, group_label)
+    -- create copy
+    local new_group = gui.clone_tree(gui.get_node(self.templates.group .. "/bg"))
+    local node_bg = new_group[self.templates.group .. "/bg"]
+    local node_label = new_group[self.templates.group .. "/label"]
+
+    -- enable, id and reset
+    gui.set_enabled(node_bg, true)
+    gui.set_id(node_bg, group_id .. "/bg")
+    gui.set_id(node_label, group_id .. "/label")
+    reset_widget(self, group_id, WIDGET_TYPE_GROUP)
+
+    -- resize and position
+    local actual_w = self.width - self.group_padding * 2
+    local actual_h = height
+    gui.set_position(node_bg, vmath.vector3(self.group_padding, self.height - pos_y - self.group_padding, 0))
+    gui.set_size(node_bg, vmath.vector3(actual_w, actual_h, 0))
+
+    gui.set_text(node_label, group_label)
+end
+
+local create_dropdown = function(self, pos_y, dropdown_id, label)
+    -- create copies
+    local new_dropdown = gui.clone_tree(gui.get_node(self.templates.dropdown .. "/bg"))
+    local node_bg = new_dropdown[self.templates.dropdown .. "/bg"]
+    local node_drop = new_dropdown[self.templates.dropdown .. "/drop"]
+    local node_clipper = new_dropdown[self.templates.dropdown .. "/clipper"]
+    local node_label = new_dropdown[self.templates.dropdown .. "/label"]
+    local node_row_label = gui.clone(gui.get_node(self.templates.label))
+
+    -- enable, id and reset
+    gui.set_enabled(node_bg, true)
+    gui.set_enabled(node_row_label, true)
+    gui.set_id(node_bg, dropdown_id .. "/bg")
+    gui.set_id(node_drop, dropdown_id .. "/drop")
+    gui.set_id(node_clipper, dropdown_id .. "/clipper")
+    gui.set_id(node_label, dropdown_id .. "/label")
+    reset_widget(self, dropdown_id, WIDGET_TYPE_DROPDOWN)
+    gui.set_text(node_row_label, label)
+    gui.set_color(node_row_label, self.color_text)
+
+    -- resize and position
+    local inner_w = self.width - self.group_padding * 4
+    local label_w = inner_w * self.split
+    local dropdown_w = inner_w * (1.0 - self.split)
+    local label_x = self.group_padding * 2
+    local dropdown_x = label_x + label_w + dropdown_w / 2
+
+    gui.set_position(node_row_label, vmath.vector3(label_x + 2, self.height - pos_y, 0))
+    gui.set_position(node_bg, vmath.vector3(dropdown_x, self.height - pos_y, 0))
+    local s = gui.get_size(node_bg)
+    gui.set_size(node_bg, vmath.vector3(dropdown_w, s.y, 0))
+
+    -- fix clipper and drop
+    gui.set_position(node_drop, vmath.vector3(dropdown_w / 2 - 15, 0, 0))
+    gui.set_size(node_clipper, vmath.vector3(dropdown_w - 30, 30, 0))
+end
+
+local create_checkbox = function(self, pos_y, checkbox_id, label)
+    -- create copies
+    local new_checkbox = gui.clone_tree(gui.get_node(self.templates.checkbox .. "/bg"))
+    local node_bg = new_checkbox[self.templates.checkbox .. "/bg"]
+    local node_check = new_checkbox[self.templates.checkbox .. "/check"]
+    local node_row_label = gui.clone(gui.get_node(self.templates.label))
+
+    -- enable, id and reset
+    gui.set_enabled(node_bg, true)
+    gui.set_enabled(node_row_label, true)
+    gui.set_id(node_bg, checkbox_id .. "/bg")
+    gui.set_id(node_check, checkbox_id .. "/check")
+    reset_widget(self, checkbox_id, WIDGET_TYPE_CHECKBOX)
+    gui.set_text(node_row_label, label)
+    gui.set_color(node_row_label, self.color_text)
+
+    -- resize and position
+    local inner_w = self.width - self.group_padding * 4
+    local label_w = inner_w * self.split
+    local checkbox_w = inner_w * (1.0 - self.split)
+    local label_x = self.group_padding * 2
+    local checkbox_x = label_x + label_w + checkbox_w / 2
+
+    gui.set_position(node_row_label, vmath.vector3(label_x + 2, self.height - pos_y, 0))
+    gui.set_position(node_bg, vmath.vector3(checkbox_x, self.height - pos_y, 0))
+end
+
+local init_widgets = function(self)
+
+    local y = 0
+    for i,v in ipairs(launchoptions.options) do
+        local initial_y = y
+        y = y + self.group_padding * 2 + self.widget_height/2
+
+        -- fill all widgets
+        for _,w in ipairs(v.options) do
+            local id = v.group .. "." .. w.id
+            -- pprint(w)
+            if w.type == "checkbox" then
+                -- y = y + self.widget_height/2
+                create_checkbox(self, y, id, w.label)
+                y = y + self.widget_height
+            elseif w.type == "resolutions" or w.type == "dropdown" then
+                -- y = y + self.widget_height/2
+                create_dropdown(self, y, id, w.label)
+                y = y + self.widget_height
+            else
+                error("unknown widget: " .. tostring(w.type))
+            end
+        end
+
+        -- greate group wrapper
+        local h = y - initial_y - self.widget_height / 2
+        create_group(self, initial_y, h, v.group, v.label)
+        y = y + self.group_padding
+    end
+    -- create_dropdown(self, self.group_padding * 2 + self.widget_height/2, "resolution", "Resolution:")
+    -- create_dropdown(self, self.group_padding * 2 + self.widget_height/2 + self.widget_height, "resolution2", "Resolution 2:")
+    -- create_checkbox(self, self.group_padding * 2 + self.widget_height/2 + self.widget_height + self.widget_height, "debug", "Debug:")
+    -- create_group(self, 0, self.group_padding * 2 + self.widget_height/2 + self.widget_height + self.widget_height + self.widget_height/2, "general", "General")
+
+    -- Default widgets
+    gui.set_color(gui.get_node("remember_label"), self.color_text)
+    local s = gui.get_position(gui.get_node("button_buttons"))
+    s.x = self.width - 10
+    gui.set_position(gui.get_node("button_buttons"), s)
+    reset_widget(self, "quit", WIDGET_TYPE_BUTTON)
+    reset_widget(self, "run", WIDGET_TYPE_BUTTON)
+    reset_widget(self, "checkbox", WIDGET_TYPE_CHECKBOX)
+    -- reset_widget(self, "dropdown", WIDGET_TYPE_DROPDOWN)
+    -- reset_widget(self, "group", WIDGET_TYPE_GROUP)
 end
 
 function init(self)
@@ -30,8 +178,23 @@ function init(self)
     self.active_widget_id = nil
     self.active_widget_type = nil
 
+    self.group_padding = 10
+    self.widget_height = 30
+
+    -- template nodes
+    self.templates = {}
+    self.templates.label = "template_label"
+    self.templates.group = "template_group"
+    self.templates.dropdown = "template_dropdown"
+    self.templates.checkbox = "template_checkbox"
+
+    hide_templates(self)
+
     -- pprint(self.options)
     self.res = 1
+
+    -- hide all gui until setup
+    gui.set_enabled(self.bg_node, false)
 end
 
 function on_message(self, message_id, message, sender)
@@ -40,10 +203,12 @@ function on_message(self, message_id, message, sender)
         self.fade_widgets = message.fade_widgets
         self.width = message.width
         self.height = message.height
+        self.split = message.split / 100.0
         self.color_base = message.color
         self.color_hover = message.color*0.8
         self.color_active = message.color*1.5
         self.color_active.w = 1.0
+        self.color_text = message.text_color
 
         -- Setup bg node
         gui.set_size(self.bg_node, vmath.vector3(message.width, message.height, 0))
@@ -57,11 +222,10 @@ function on_message(self, message_id, message, sender)
         -- gui.set_color(gui.get_node("group/bg"), self.color_base)
         -- gui.set_outline(gui.get_node("group/label"), self.color_base)
 
-        create_widget(self, "quit", WIDGET_TYPE_BUTTON)
-        create_widget(self, "run", WIDGET_TYPE_BUTTON)
-        create_widget(self, "checkbox", WIDGET_TYPE_CHECKBOX)
-        create_widget(self, "dropdown", WIDGET_TYPE_DROPDOWN)
-        create_widget(self, "group", WIDGET_TYPE_GROUP)
+        init_widgets(self)
+
+        -- setup done, show gui
+        gui.set_enabled(self.bg_node, true)
 
         -- gui.set_color(gui.get_node("checkbox/check"), self.color_base)
 
@@ -192,7 +356,7 @@ local checkbox = function(self, node_id, action_id, action, value)
             anim_widget_color(self, node_bg, self.color_active)
         elseif action.released then
             if self.active_widget_id == node_id then
-                self.c = not self.c
+                value = not value
             end
 
             reset_active_widget(self)
@@ -209,18 +373,19 @@ local checkbox = function(self, node_id, action_id, action, value)
         reset_hover_widget(self)
     end
 
-    if self.c then
+    if value then
         gui.play_flipbook(node_check, "checked")
     else
         gui.play_flipbook(node_check, "unchecked")
     end
 
-    return self.c
+    return value
 end
 
 function on_input(self, action_id, action)
     if action_id == self.input_trigger or action_id == nil then
 
+        -- Default buttons
         button(self, "quit", action_id, action, function()
             msg.post("@system:", "exit", {code = 0})
         end)
@@ -229,17 +394,31 @@ function on_input(self, action_id, action)
             msg.post(".", "run")
         end)
 
-        local values = {
-            "640x480",
-            "640x360",
-            "1280x960",
-            "1280x720",
-            "2560x1080",
-            "2560x1920",
-        }
-        self.res = dropdown(self, "dropdown", action_id, action, values, self.res)
-
         self.c = checkbox(self, "checkbox", action_id, action, self.c)
+
+        -- Check input for options
+        for i,v in ipairs(launchoptions.options) do
+            -- fill all widgets
+            for _,w in ipairs(v.options) do
+                local id = v.group .. "." .. w.id
+                if w.type == "checkbox" then
+                    w.value = checkbox(self, id, action_id, action, w.value)
+                elseif w.type == "resolutions" or w.type == "dropdown" then
+                    w.value = dropdown(self, id, action_id, action, w.values, w.value)
+                end
+            end
+        end
+
+        -- local values = {
+        --     "640x480",
+        --     "640x360",
+        --     "1280x960",
+        --     "1280x720",
+        --     "2560x1080",
+        --     "2560x1920",
+        -- }
+        -- self.res = dropdown(self, "dropdown", action_id, action, values, self.res)
+
 
         if action.released and self.active_widget_id then
             reset_active_widget(self)

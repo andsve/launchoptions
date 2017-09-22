@@ -1,15 +1,36 @@
 [
     {
-        "group": "Custom General",
+        "group": "graphics",
+        "label": "Graphics",
         "options": [
-            { "type": "checkbox", "id": "lol", "label": "LOL" }
+            { "type": "resolutions", "id": "res", "label": "Resolution", "value": 1, "values": [
+                "640x480",
+                "640x360",
+                "1280x960",
+                "1280x720",
+                "2560x1080",
+                "2560x1920",
+                ]
+            },
+            { "type": "dropdown", "id": "quality", "label": "Rendering Quality", "value": 5, "values": [
+                "Gamemaker",
+                "Unity",
+                "Unreal",
+                "CryEngine",
+                "Defold (Best)",
+                ]
+            },
+            { "type": "checkbox", "id": "fullscreen", "label": "Fullscreen" }
         ]
     },
     {
-        "group": "Graphics",
+        "group": "general",
+        "label" : "General",
         "options": [
-            { "type": "resolutions", "id": "res", "label": "Resolution" }
+            { "type": "checkbox", "id": "debug", "label": "Debug" }
+        ],
+        "options": [
+            { "type": "checkbox", "id": "log", "label": "Write Log" }
         ]
     }
-
 ]
