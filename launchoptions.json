@@ -20,17 +20,17 @@
                 "Defold (Best)",
                 ]
             },
-            { "type": "checkbox", "id": "fullscreen", "label": "Fullscreen" }
+            { "type": "checkbox", "id": "fullscreen", "label": "Fullscreen", "value": false }
         ]
     },
     {
         "group": "general",
         "label" : "General",
         "options": [
-            { "type": "checkbox", "id": "debug", "label": "Debug" }
+            { "type": "checkbox", "id": "debug", "label": "Debug", "value": false }
         ],
         "options": [
-            { "type": "checkbox", "id": "log", "label": "Write Log" }
+            { "type": "checkbox", "id": "log", "label": "Write Log", "value": true }
         ]
-    }
+    },
 ]

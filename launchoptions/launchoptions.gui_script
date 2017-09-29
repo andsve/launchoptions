@@ -127,7 +127,7 @@ end
 
 local init_widgets = function(self)
 
-    local y = 0
+    local y = self.group_padding
     for i,v in ipairs(launchoptions.options) do
         local initial_y = y
         y = y + self.group_padding * 2 + self.widget_height/2
@@ -391,6 +391,8 @@ function on_input(self, action_id, action)
         end)
 
         button(self, "run", action_id, action, function()
+            launchoptions:save()
+            -- print(launchoptions:get("graphics", "fullscreen", false))
             msg.post(".", "run")
         end)
 

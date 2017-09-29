@@ -20,8 +20,15 @@ local run_launchoptions = function(self)
     local arg1 = "--config=launchoptions.booted=1"
     local arg2 = "--config=display.width=" .. tostring(self.dialog_width)
     local arg3 = "--config=display.height=" .. tostring(self.dialog_height)
-    local arg4 = "--config=project.title=" .. tostring(project_title) .. " - Options"
+    -- local arg4 = "--config=project.title=" .. tostring(project_title) .. " - Options"
     msg.post("@system:", "reboot", { arg1 = arg1, arg2 = arg2, arg3 = arg3, arg4 = arg4 })
+end
+
+function string:split(sep)
+   local sep, fields = sep or ":", {}
+   local pattern = string.format("([^%s]+)", sep)
+   self:gsub(pattern, function(c) fields[#fields+1] = c end)
+   return fields
 end
 
 function init(self)
@@ -34,7 +41,12 @@ function init(self)
     if conf_run_game == "1" then
         -- TODO apply settings
         launchoptions_utils.hide_window()
-        launchoptions_utils.set_window_size(300, 300)
+        -- launchoptions_utils.set_window_size(300, 300)
+        launchoptions:load()
+        local res = launchoptions:get("graphics", "res", "300x300")
+        res = string.split(res, "x")
+        launchoptions_utils.set_window_size(tonumber(res[1]), tonumber(res[2]))
+
 
         -- Load "correct" game/entry collection
         msg.post(self.game_collection, "load")

@@ -35,8 +35,8 @@ void launchoptions_platform::MakeDialog()
 void launchoptions_platform::SetWindowSize(float width, float height)
 {
     NSRect frame = [window frame];
-    frame.origin.x += width;
-    frame.origin.y += height;
+    // frame.origin.x += width;
+    // frame.origin.y += height;
     frame.size.width = width;
     frame.size.height = height;
     [window setFrame:frame display:YES];
